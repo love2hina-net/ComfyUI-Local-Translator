@@ -1,5 +1,6 @@
 import logging
 from pathlib import Path
+from textwrap import dedent
 from typing import (
     Any,
     Optional,
@@ -76,7 +77,32 @@ class LocalTranslatorNode:
         pipeline = build_pipeline()
 
         prompts = [
-            { 'role': 'system', 'content': 'You are a translator. Please translate the message from the user into English.' },
+            { 'role': 'system', 'content': dedent('''
+                You are a translator. Please translate the message from the user into English.
+                                                  
+                The special rules are as follows:
+
+                1. _SENTENCE_[_KEYWORD_]
+
+                    Make sure the KEYWORD in the brackets expresses the previous SENTENCE.
+
+                    Example:
+                    * Input: 大きなツインテール[pigtails hair]が彼女の特徴だ。<br/>
+                    Translated: Her big pigtails hair are her defining feature.
+
+                2. [_SENTENCE_|_KEYWORD_]
+
+                    The SENTENCE before the vertical bars in square brackets must be expressed with the KEYWORD after the vertical bar.
+
+                    Example:
+                    * Input: 彼女は大きな赤い[ランドセル|randoseru]を背負って学校に向かった。<br/>
+                    Translated: She headed to school with a big red randoseru on her back.
+                    * Input: 彼は約20年にわたり[アイドルマスター|"THE IDOLM@STER"]に夢中だ。<br/>
+                    Translated: He has been crazy fun about "THE IDOLM@STER" for a long time about 20 years.
+
+                    As you can see from these examples, there is an intention to display trademarks and other information precisely, so MUST use the specified keywords as is.
+                ''')
+            },
             { 'role': 'user', 'content': string },
         ]
         response = pipeline(prompts, max_new_tokens=max_tokens)
