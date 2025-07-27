@@ -1,8 +1,8 @@
 import logging
-from pathlib import Path
 from textwrap import dedent
 from typing import (
     Any,
+    Literal,
     Optional,
 )
 
@@ -10,25 +10,19 @@ import transformers
 from transformers import (
     AutoTokenizer,
     AutoModelForCausalLM,
-    LlamaForCausalLM,
     TextGenerationPipeline,
 )
 
 from comfy import model_management
 
+from ..common import MODEL_PATH
 from .ProxyForLM import ProxyForLM
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-MODEL_PATH = (Path(__file__).parent / '..' / 'models' / 'phi-4-unsloth-bnb-4bit').resolve()
-
 proxy: Optional[ProxyForLM] = None
 tokenizer: Optional[Any] = None
-
-class ProxyLlamaForCausalLM(LlamaForCausalLM):
-    def __init__(self):
-        pass
 
 def load_model() -> tuple[AutoModelForCausalLM, Any]:
     global proxy
@@ -61,19 +55,37 @@ def build_pipeline() -> TextGenerationPipeline:
 
 class LocalTranslatorNode:
 
+    TRANSLATE_PLACEHOLDER: str = '%TRANSLATE%'
+
     @classmethod
     def INPUT_TYPES(cls):
         return {
             'required': {
-                'string': ('STRING', { "multiline": True }),
+                'string': ('STRING', { 'multiline': True }),
             },
             'optional': {
-                'max_tokens': ('INT', { "default": 512, "min": 1, "max": 2048, "step": 1 }),
+                'optional': ('STRING', { 'multiline': True, 'default': '' }),
+                'max_tokens': ('INT', { 'default': 512, 'min': 1, 'max': 2048, 'step': 1 }),
             },
         }
     
-    def translate(self, string: str, max_tokens: int = 512) -> tuple[str]:
-        logger.debug(f'[Local Translator] Input text: {string}, max_tokens: {max_tokens}')
+    @classmethod
+    def VALIDATE_INPUTS(cls, string: str, optional: str, max_tokens: int) -> Literal[True] | str:
+        if not string:
+            logger.warning("[Local Translator] Input string is empty.")
+
+        if optional:
+            # 文字列中に %TRANSLATE% が含まれていない場合
+            if optional.find(LocalTranslatorNode.TRANSLATE_PLACEHOLDER) == -1:
+                return f"optional string must contain '{LocalTranslatorNode.TRANSLATE_PLACEHOLDER}' to indicate where the translated text should be inserted."
+            # 文字列中に %TRANSLATE% が複数含まれている場合
+            if optional.count(LocalTranslatorNode.TRANSLATE_PLACEHOLDER) > 1:
+                return f"optional string must contain '{LocalTranslatorNode.TRANSLATE_PLACEHOLDER}' only once to indicate where the translated text should be inserted."
+
+        return True
+    
+    def translate(self, string: str, optional: str = '', max_tokens: int = 512) -> tuple[str]:
+        logger.debug(f"[Local Translator] Input text: {string}, max_tokens: {max_tokens}")
         pipeline = build_pipeline()
 
         prompts = [
@@ -105,11 +117,22 @@ class LocalTranslatorNode:
             },
             { 'role': 'user', 'content': string },
         ]
-        response = pipeline(prompts, max_new_tokens=max_tokens)
+        params = {
+            'max_new_tokens': max_tokens,
+            'do_sample': False,
+            'num_beams': 4,
+        }
+        response = pipeline(prompts, **params)
         translated = response[0]['generated_text'][-1]['content']
-        logger.debug(f'[Local Translator] Translated text: {translated}')
+        logger.debug(f"[Local Translator] Translated text: {translated}")
+
+        if optional:
+            # %TRANSLATE% を置換
+            result = optional.replace(LocalTranslatorNode.TRANSLATE_PLACEHOLDER, translated, 1)
+        else:
+            result = translated
         
-        return (translated,)
+        return (result,)
     
     RETURN_TYPES = ('STRING',)
     FUNCTION = translate.__name__

@@ -27,6 +27,7 @@ class ProxyForLM:
         self._SIZE = model_management.module_size(model)
         self._LOAD_DEVICE = model.device
         self._OFFLOAD_DEVICE = model_management.text_encoder_offload_device()
+        logger.debug(f"[Local Translator] load device: {self._LOAD_DEVICE}, offload device: {self._OFFLOAD_DEVICE}, dtype: {self.model_dtype()}")
 
     @classmethod
     def from_pretrained(
@@ -41,9 +42,7 @@ class ProxyForLM:
             *model_args,
             **kwargs,
         )
-        logger.debug(f"--> load_device: {load_device}")
         model.to(device=load_device)
-        model.model.to(device=load_device)
         return ProxyForLM(model)
 
     def is_clone(self, other: Any) -> bool:
@@ -58,10 +57,7 @@ class ProxyForLM:
         return self._MODEL
     
     def model_dtype(self):
-        if hasattr(self.model, 'get_dtype'):
-            return self.model.get_dtype()
-        else:
-            return self.model.dtype
+        return self.model.dtype
 
     @property
     def load_device(self):
@@ -74,8 +70,8 @@ class ProxyForLM:
         return self._SIZE
 
     def loaded_size(self):
-        if hasattr(self.model, 'model_loaded_weight_memory'):
-            return self.model.model_loaded_weight_memory
+        if (self.model.device.type == self._LOAD_DEVICE.type) and (self.model.device.index == self._LOAD_DEVICE.index):
+            return self._SIZE
         else:
             return 0
 
@@ -84,14 +80,12 @@ class ProxyForLM:
 
         if (isinstance(device, torch.device)):
             self.model.to(device=device)
-            self.model.model.to(device=device)
         else:
             logger.debug(f"[Local Translator] Ignore cast to: {device}")
 
     def partially_load(self, device_to, extra_memory=0, force_patch_weights=False):
         logger.debug(f"[Local Translator] partially_load: {device_to}")
         self.model.to(device=device_to)
-        self.model.model.to(device=device_to)
         return self.loaded_size()
     
     def detach(self, unpatch_all=True):
