@@ -5,7 +5,16 @@ from .nodes.LocalTranslator import LocalTranslatorNode
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-# WEB_DIRECTORY = './js'
+__all__ = [
+    'NODE_CLASS_MAPPINGS',
+    'NODE_DISPLAY_NAME_MAPPINGS',
+    
+]
+
+__author__ = 'love2hina'
+__email__ = 'webmaster@love2hina.net'
+__version__ = '0.0.1'
+
 NODE_CLASS_MAPPINGS = {
     'LocalTranslator': LocalTranslatorNode,
 }

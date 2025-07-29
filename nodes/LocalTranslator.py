@@ -32,13 +32,11 @@ def load_model() -> tuple[AutoModelForCausalLM, Any]:
         proxy = ProxyForLM.from_pretrained(
             MODEL_PATH,
             local_files_only=True,
-            load_in_4bit=True,
         )
     if tokenizer is None:
         tokenizer = AutoTokenizer.from_pretrained(
             MODEL_PATH,
             local_files_only=True,
-            load_in_4bit=True,
         )
     
     model_management.load_models_gpu([proxy])
@@ -110,7 +108,7 @@ class LocalTranslatorNode:
                     * Input: 彼女は大きな赤い[ランドセル|randoseru]を背負って学校に向かった。<br/>
                     Translated: She headed to school with a big red randoseru on her back.
                     * Input: 彼は約20年にわたり[アイドルマスター|"THE IDOLM@STER"]に夢中だ。<br/>
-                    Translated: He has been crazy fun about "THE IDOLM@STER" for a long time about 20 years.
+                    Translated: He has been crazy about "THE IDOLM@STER" for about 20 years.
 
                     As you can see from these examples, there is an intention to display trademarks and other information precisely, so MUST use the specified keywords as is.
                 ''')

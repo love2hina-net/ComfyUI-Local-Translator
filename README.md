@@ -1,52 +1,52 @@
-<div style="text-align: center;">
+<div align="center">
 
 # ComfyUI Local Translator
 ローカルSLM(Microsoft Phi-4)を用いたテキスト翻訳ノードです。<br/>
-This is a text translation node using a local SLM (Microsoft Phi-4) for ComfyUI.
+This is a text translation node for ComfyUI using a local SLM (Microsoft Phi-4).
 
 ![Screenshot](./images/image000.png)
 
 !!! ComfyUIの一定の知識を前提とし、今のところ初心者向けの案内はしていません。 !!!<br/>
-!!! NOW, TARGET FOR DEVELOPERS. NOT RECOMMENDED FOR BEGINNERS. !!!
+!!! CURRENTLY INTENDED FOR DEVELOPERS. NOT RECOMMENDED FOR BEGINNERS. !!!
 
 </div>
 
 ## 特徴 / Features
 * ローカルSLMを用いた翻訳を行います。<br/>
-  This is a translator using a local SLM.
+  This node performs translation using a local SLM.
   * Google Translatorなどを使う翻訳ノードと比べAPI回数制限などを受けません。<br/>
-    There is no API limit like Google Translator.
+    Unlike nodes using Google Translator, there are no API call limits.
   * 検閲を受けません。(笑)<br/>
-    It is not subject to censorship.
+    No censorship is applied.
 * ローカルSLMもComfyUIのモデルマネジメント下に入ります。<br/>
-  Local SLM also has VRAM control under ComfyUI's model management.
+  The local SLM is also managed by ComfyUI's model management, including VRAM control.
 * トリガーワード指定が可能になっています。<br/>
-  The keywords can be specified.
+  You can specify trigger keywords.
 
 ## インストール方法 / Installation
 通常のcustom nodesと同様です。割愛します。<br/>
-The installation process is similar to that of a typical custom nodes for ComfyUI. I will omit the explanation.
+Installation is the same as other custom nodes for ComfyUI. Details are omitted.
 
 初回実行時にHugging Faceよりモデルをダウンロードします。<br/>
-At first time you run this extension, it will download a model from Hugging Face.
+The model will be downloaded from Hugging Face the first time you run this extension.
 
 ## 使い方 / Usage
 #### 基本的な使い方 / Basic Usage
 上段に翻訳する文字列を、下段の文字列は原則としてそのまま出力されます。<br/>
-The upper line contains the string to be translated, and the lower line is generally output as is.<br/>
+Enter the string to be translated in the upper field. The lower field is generally output as is.<br/>
 下段を指定する場合、 **%TRANSLATE%** を含めて指定する必要があり、このキーワード部分に上段で指定した翻訳した後の文字列が埋め込まれて出力されます。<br/>
-When specifying the lower line, you must include **%TRANSLATE%** at once and the translated string specified in the upper line will be embedded in this keyword and output.
+If you use the lower field, you must include **%TRANSLATE%** at once. The translated string from the upper field will be inserted at this keyword.
 
-![Screenshot](./images/image001.png)
+![Using exsample](./images/image001.png)
 
 #### 特殊ルール / Special rules
 翻訳する文章には次の特殊ルールが適用されます。<br/>
-The special rules are as follows:
+The following special rules apply to sentences to be translated:
 
 1. _文_[_キーワード_] / _SENTENCE_[_KEYWORD_]
 
     前の文を角括弧内に指定したキーワードで表現するように指示します。<br/>
-    Make sure the KEYWORD in the brackets expresses the previous SENTENCE.
+    Instructs the translation to express the previous SENTENCE using the KEYWORD in brackets.
 
     例 / Example:
     * Input: 大きなツインテール[pigtails hair]が彼女の特徴だ。<br/>
@@ -55,11 +55,11 @@ The special rules are as follows:
 2. [_文_|_キーワード_] / [_SENTENCE_|_KEYWORD_]
 
     角括弧内の縦棒前の文を縦棒の後ろのキーワードで表現するように指示します。<br/>
-    The SENTENCE before the vertical bars in square brackets must be expressed with the KEYWORD after the vertical bar.
+    Instructs the translation to express the SENTENCE before the vertical bar in brackets using the KEYWORD after the vertical bar.
 
     例 / Example:
     * Input: 彼は約20年にわたり[アイドルマスター|"THE IDOLM@STER"]に夢中だ。<br/>
-      Translated: He has been crazy fun about "THE IDOLM@STER" for a long time about 20 years.
+      Translated: He has been crazy about "THE IDOLM@STER" for about 20 years.
 
 特定のトリガーキーワードを指定する時に便利です。<br/>
-This is useful when you want to be explicit about a particular trigger keyword.
+This is useful when you want to specify particular trigger keywords.

@@ -1,0 +1,27 @@
+[project]
+name = "local-translator"
+version = "0.0.1"
+description = "A text translation node for ComfyUI using a local SLM (Microsoft Phi-4)"
+authors = [
+  {name = "love2hina", email = "webmaster@love2hina.net"}
+]
+readme = "README.md"
+license = {file = "LICENSE"}
+classifiers = [
+    "Operating System :: OS Independent",
+    "Environment :: GPU :: NVIDIA CUDA",
+]
+dependencies = []
+dynamic = ["dependencies"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[project.urls]
+bugs = "https://github.com/love2hina-net/ComfyUI-Local-Translator/issues"
+homepage = "https://github.com/love2hina-net/ComfyUI-Local-Translator"
+
+[tool.comfy]
+PublisherId = "love2hina-net"
+DisplayName = "Local-Translator"
+Icon = ""
