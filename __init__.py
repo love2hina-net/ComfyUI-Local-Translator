@@ -1,9 +1,5 @@
-import logging
-
+from .common import getLogger
 from .nodes.LocalTranslator import LocalTranslatorNode
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 __all__ = [
     'NODE_CLASS_MAPPINGS',
@@ -22,4 +18,4 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     'LocalTranslator': 'Local Translator',
 }
 
-logger.info('[Local Translator] ComfyUI Local Translator loaded.')
+getLogger().info('ComfyUI Local Translator loaded.')

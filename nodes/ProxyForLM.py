@@ -1,4 +1,3 @@
-import logging
 import os
 from typing import (
     Any,
@@ -13,8 +12,9 @@ from transformers import (
 
 from comfy import model_management
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+from ..common import getLogger
+
+logger = getLogger()
 
 class ProxyForLM:
     _MODEL: LlamaForCausalLM
@@ -27,7 +27,7 @@ class ProxyForLM:
         self._SIZE = model_management.module_size(model)
         self._LOAD_DEVICE = model.device
         self._OFFLOAD_DEVICE = model_management.text_encoder_offload_device()
-        logger.debug(f"[Local Translator] load device: {self._LOAD_DEVICE}, offload device: {self._OFFLOAD_DEVICE}, dtype: {self.model_dtype()}")
+        logger.debug(f"load device: {self._LOAD_DEVICE}, offload device: {self._OFFLOAD_DEVICE}, dtype: {self.model_dtype()}")
 
     @classmethod
     def from_pretrained(
@@ -76,15 +76,15 @@ class ProxyForLM:
             return 0
 
     def model_patches_to(self, device):
-        logger.debug(f"[Local Translator] model_patches_to: {device}")
+        logger.debug(f"model_patches_to: {device}")
 
         if (isinstance(device, torch.device)):
             self.model.to(device=device)
         else:
-            logger.debug(f"[Local Translator] Ignore cast to: {device}")
+            logger.debug(f"Ignore cast to: {device}")
 
     def partially_load(self, device_to, extra_memory=0, force_patch_weights=False):
-        logger.debug(f"[Local Translator] partially_load: {device_to}")
+        logger.debug(f"partially_load: {device_to}")
         self.model.to(device=device_to)
         return self.loaded_size()
     

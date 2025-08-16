@@ -1,10 +1,10 @@
-import logging
 from textwrap import dedent
 from typing import (
     Any,
     Literal,
     Optional,
 )
+from datetime import datetime
 
 import transformers
 from transformers import (
@@ -15,11 +15,10 @@ from transformers import (
 
 from comfy import model_management
 
-from ..common import MODEL_PATH
+from ..common import MODEL_PATH, getLogger
 from .ProxyForLM import ProxyForLM
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger = getLogger()
 
 proxy: Optional[ProxyForLM] = None
 tokenizer: Optional[Any] = None
@@ -70,7 +69,7 @@ class LocalTranslatorNode:
     @classmethod
     def VALIDATE_INPUTS(cls, string: str, optional: str, max_tokens: int) -> Literal[True] | str:
         if not string:
-            logger.warning("[Local Translator] Input string is empty.")
+            logger.warning("Input string is empty.")
 
         if optional:
             # 文字列中に %TRANSLATE% が含まれていない場合
@@ -82,8 +81,37 @@ class LocalTranslatorNode:
 
         return True
     
-    def translate(self, string: str, optional: str = '', max_tokens: int = 512) -> tuple[str]:
-        logger.debug(f"[Local Translator] Input text: {string}, max_tokens: {max_tokens}")
+    CACHE_LIMITCOUNT: int = 10
+    _cache: dict[str, tuple[datetime, str]] = {}
+
+    def __init__(self):
+        self._cache = {}
+
+    def _search_cache(self, string: str) -> Optional[str]:
+        if string in self._cache:
+            _, cached_result = self._cache[string]
+            # タイムスタンプの更新
+            self._cache[string] = (datetime.now(), cached_result)
+
+            logger.debug(f"Cache hit for: {string}")
+            return cached_result
+        else:
+            logger.debug(f"Cache isn't hit for: {string}")
+            return None
+        
+    def _add_cache(self, string: str, translated: str) -> None:
+        if len(self._cache) >= LocalTranslatorNode.CACHE_LIMITCOUNT:
+            # キャッシュのサイズが制限を超える場合、超過エントリを削除
+            sorted_cache = sorted(self._cache.items(), key=lambda item: item[1][0])
+            drop_keys = [k for k, _ in sorted_cache[:len(self._cache) - LocalTranslatorNode.CACHE_LIMITCOUNT + 1]]
+            for key in drop_keys:
+                logger.debug(f"Cache limit exceeded. Removed entry: {key}")
+                del self._cache[key]
+
+        self._cache[string] = (datetime.now(), translated)
+
+    def _translate_implementation(self, string: str, optional: str, max_tokens: int) -> str:
+        logger.debug(f"Input text: {string}, max_tokens: {max_tokens}")
         pipeline = build_pipeline()
 
         prompts = [
@@ -122,7 +150,19 @@ class LocalTranslatorNode:
         }
         response = pipeline(prompts, **params)
         translated = response[0]['generated_text'][-1]['content']
-        logger.debug(f"[Local Translator] Translated text: {translated}")
+        logger.debug(f"Translated text: {translated}")
+
+        # キャッシュに保存
+        self._add_cache(string, translated)
+        
+        return translated
+    
+    def translate(self, string: str, optional: str = '', max_tokens: int = 512) -> tuple[str]:
+        # キャッシュの検索
+        translated = self._search_cache(string)
+        if translated is None:
+            # キャッシュにない場合は翻訳を実行
+            translated = self._translate_implementation(string, optional, max_tokens)
 
         if optional:
             # %TRANSLATE% を置換
