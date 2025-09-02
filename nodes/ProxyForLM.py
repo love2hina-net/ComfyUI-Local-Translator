@@ -83,6 +83,9 @@ class ProxyForLM:
         else:
             logger.debug(f"Ignore cast to: {device}")
 
+    def model_patches_models(self):
+        return []
+
     def partially_load(self, device_to, extra_memory=0, force_patch_weights=False):
         logger.debug(f"partially_load: {device_to}")
         self.model.to(device=device_to)
