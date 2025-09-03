@@ -63,6 +63,10 @@ class ProxyForLM:
     def load_device(self):
         return self._LOAD_DEVICE
     
+    @property
+    def offload_device(self):
+        return self._OFFLOAD_DEVICE
+    
     def current_loaded_device(self):
         return self.model.device
 
@@ -88,6 +92,11 @@ class ProxyForLM:
 
     def partially_load(self, device_to, extra_memory=0, force_patch_weights=False):
         logger.debug(f"partially_load: {device_to}")
+        self.model.to(device=device_to)
+        return self.loaded_size()
+    
+    def partially_unload(self, device_to, memory_to_free=0):
+        logger.debug(f"partially_unload: {device_to}")
         self.model.to(device=device_to)
         return self.loaded_size()
     
